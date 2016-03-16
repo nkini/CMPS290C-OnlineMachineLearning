@@ -14,8 +14,8 @@ except ValueError as v:
 cello2_data = np.array(cello2_data)
 
 # parameters
-num_experts = 10
-trials = 5500
+#num_experts = 10
+#trials = 5500
 eta = 4.0
 alpha = 0.08
 sdc = 10
@@ -25,10 +25,48 @@ sdc = 10
 lin_experts = np.linspace(0,sdc,10)
 exp_experts = np.logspace(0.01, 1, num=10, endpoint=True)
 
-w_temp = []
-w = []
-def plot_losses_fixed_share_to_uniform_past(idletimes,experts):
-    global w_temp,w
+def get_losses_static_expert(idletimes,experts,filename):
+    num_experts = len(experts)
+    w_init = np.ones(num_experts) * 1/num_experts
+    w = np.array(w_init)
+    losses = np.array(np.zeros(num_experts))
+    i = 1
+    
+    for idletime in idletimes:
+        loss = np.array([idletime if timeout >= idletime else timeout+sdc for timeout in experts])
+        w = np.vstack((w,np.exp(-eta*loss)*w[i-1]))
+        w[i] = w[i]/sum(w[i])
+        losses = np.vstack((losses,loss))
+        i += 1
+        
+    cum_losses = np.cumsum(losses,axis=0)
+    pickle.dump(cum_losses,open(filename,'w'))
+    pickle.dump(w,open(filename.replace('cum_losses','weights'),'w'))
+
+
+def get_losses_fixed_share_to_start_vector(idletimes,experts,filename):
+    num_experts = len(experts)
+    w_init = np.ones(num_experts) * 1/num_experts
+    w = np.array(w_init)
+    losses = np.array(np.zeros(num_experts))
+    i = 0
+    
+    for idletime in idletimes:
+        loss = np.array([idletime if timeout >= idletime else timeout+sdc for timeout in experts])
+        w_temp = np.exp(-eta*loss)*w[i]
+        w_temp = (1-alpha)*w_temp/sum(w_temp) + alpha*(w_init)
+	if not np.allclose(sum(w_temp), 1.0, rtol=1e-05, atol=1e-08):
+	    print("weights may not sum to 1",i,sum(w_temp))
+        w = np.vstack((w,w_temp))
+        losses = np.vstack((losses,loss))
+        i += 1
+        
+    cum_losses = np.cumsum(losses,axis=0)
+    pickle.dump(cum_losses,open(filename,'w'))
+    pickle.dump(w,open(filename.replace('cum_losses','weights'),'w'))
+
+
+def get_losses_fixed_share_to_uniform_past(idletimes,experts,filename):
     num_experts = len(experts)
     w_init = np.ones(num_experts) * 1/num_experts
     w_sum = np.zeros(num_experts)
@@ -42,30 +80,22 @@ def plot_losses_fixed_share_to_uniform_past(idletimes,experts):
         w_sum += w[i]
         i += 1
         w_temp = (1-alpha)*w_temp/sum(w_temp) + alpha*(w_sum)/i
+	if not np.allclose(sum(w_temp), 1.0, rtol=1e-05, atol=1e-08):
+	    print("weights may not sum to 1",i,sum(w_temp))
         w = np.vstack((w,w_temp))
         losses = np.vstack((losses,loss))
         
     cum_losses = np.cumsum(losses,axis=0)
-    pickle.dump(cum_losses,open('cum_losses_FSUP_expexp_100k.pkl','w'))
-    #plt.figure(figsize=(20, 12), dpi=80)
+    pickle.dump(cum_losses,open(filename,'w'))
+    pickle.dump(w,open(filename.replace('cum_losses','weights'),'w'))
 
-    #for i in range(len(experts)):
-    #    plt.plot(cum_losses[:,i],label='fixed timeout {p}'.format(p=experts[i]))
-        
-    #plt.legend(loc='best')
-    #plt.savefig('losses_fixed_share_to_uniform_past.png')
-
-
-Z = pickle.load(open('Zvalues.py2.pkl'))
+from pprint import pprint
 
 def beta(t):
     global Z,alpha
-    return np.array([[alpha/(t-q)*Z[t] for q in range(t)]])
+    return np.array([[1.0/((t-q)*Z[t]) for q in range(t)]])
     
-w_temp = []
-w = []
-def plot_losses_fixed_share_to_decaying_past(idletimes,experts):
-    global w_temp,w
+def get_losses_fixed_share_to_decaying_past(idletimes,experts,filename):
     num_experts = len(experts)
     w_init = np.ones(num_experts) * 1/num_experts
     w = np.array([w_init])
@@ -76,16 +106,34 @@ def plot_losses_fixed_share_to_decaying_past(idletimes,experts):
         loss = np.array([idletime if timeout >= idletime else timeout+sdc for timeout in experts])
         w_temp = np.exp(-eta*loss)*w[t]
         t += 1
-        w_temp = (1-alpha)*w_temp/sum(w_temp) + np.dot(beta(t),w)
-        #alpha*sigma_q_0_to_t((1/(t-q))*(1/Z[t]))#(sum(w[:,:]))/i)
+        w_temp = (1-alpha)*w_temp/sum(w_temp) + alpha*np.dot(beta(t),w)
+	#for some reason the line above returns an array of the form a = [[1,2,3]]
+	if not np.allclose(sum(w_temp[0]), 1.0, rtol=1e-05, atol=1e-08):
+	    print("weights may not sum to 1",t,sum(w_temp[0]))
         w = np.vstack((w,w_temp))
         losses = np.vstack((losses,loss))
         
     cum_losses = np.cumsum(losses,axis=0)
-    pickle.dump(cum_losses,open('cum_losses_FSDP_expexp_10k.pkl','w'))
+    pickle.dump(cum_losses,open(filename,'w'))
+    pickle.dump(w,open(filename.replace('cum_losses','weights'),'w'))
 
-
-#plot_losses_fixed_share_to_uniform_past(cello2_data[:100000],lin_experts)
-#plot_losses_fixed_share_to_uniform_past(cello2_data[:100000],exp_experts)
-plot_losses_fixed_share_to_decaying_past(cello2_data[:10000],lin_experts)
-plot_losses_fixed_share_to_decaying_past(cello2_data[:10000],exp_experts)
+num_data = 100000
+print('cum_losses_SE_expexp_100k')
+get_losses_static_expert(cello2_data[:num_data],lin_experts,'cum_losses_SE_linexp_100k.pkl')
+print('cum_losses_SE_linexp_100k')
+get_losses_static_expert(cello2_data[:num_data],exp_experts,'cum_losses_SE_expexp_100k.pkl')
+'''
+print('cum_losses_FSSV_linexp_100k')
+get_losses_fixed_share_to_start_vector(cello2_data[:num_data],lin_experts,'cum_losses_FSSV_linexp_100k.pkl')
+print('cum_losses_FSSV_linexp_100k')
+get_losses_fixed_share_to_start_vector(cello2_data[:num_data],exp_experts,'cum_losses_FSSV_expexp_100k.pkl')
+print('cum_losses_FSUP_linexp_100k')
+get_losses_fixed_share_to_uniform_past(cello2_data[:num_data],lin_experts,'cum_losses_FSUP_linexp_100k.pkl')
+print('cum_losses_FSUP_expexp_100k')
+get_losses_fixed_share_to_uniform_past(cello2_data[:num_data],exp_experts,'cum_losses_FSUP_expexp_100k.pkl')
+Z = pickle.load(open('Zvalues.py2.pkl'))
+print('cum_losses_FSDP_linexp_100k')
+get_losses_fixed_share_to_decaying_past(cello2_data[:num_data],lin_experts,'cum_losses_FSDP_linexp_100k.pkl')
+print('cum_losses_FSDP_expexp_100k')
+get_losses_fixed_share_to_decaying_past(cello2_data[:num_data],exp_experts,'cum_losses_FSDP_expexp_100k.pkl')
+'''
