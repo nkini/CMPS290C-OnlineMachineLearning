@@ -1,0 +1,4 @@
+cum_losses_SE_expexp_100k
+cum_losses_SE_linexp_100k
+452.85user 204.22system 10:59.97elapsed 99%CPU (0avgtext+0avgdata 131500maxresident)k
+5672inputs+206808outputs (0major+71089408minor)pagefaults 0swaps

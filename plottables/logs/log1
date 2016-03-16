@@ -1,0 +1,4 @@
+cum_losses_FSDP_linexp_100k
+cum_losses_FSDP_expexp_100k
+2816.45user 66.77system 48:11.57elapsed 99%CPU (0avgtext+0avgdata 139184maxresident)k
+16inputs+165712outputs (0major+23411793minor)pagefaults 0swaps

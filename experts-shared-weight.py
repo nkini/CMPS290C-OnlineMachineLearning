@@ -122,7 +122,6 @@ print('cum_losses_SE_expexp_100k')
 get_losses_static_expert(cello2_data[:num_data],lin_experts,'cum_losses_SE_linexp_100k.pkl')
 print('cum_losses_SE_linexp_100k')
 get_losses_static_expert(cello2_data[:num_data],exp_experts,'cum_losses_SE_expexp_100k.pkl')
-'''
 print('cum_losses_FSSV_linexp_100k')
 get_losses_fixed_share_to_start_vector(cello2_data[:num_data],lin_experts,'cum_losses_FSSV_linexp_100k.pkl')
 print('cum_losses_FSSV_linexp_100k')
@@ -136,4 +135,3 @@ print('cum_losses_FSDP_linexp_100k')
 get_losses_fixed_share_to_decaying_past(cello2_data[:num_data],lin_experts,'cum_losses_FSDP_linexp_100k.pkl')
 print('cum_losses_FSDP_expexp_100k')
 get_losses_fixed_share_to_decaying_past(cello2_data[:num_data],exp_experts,'cum_losses_FSDP_expexp_100k.pkl')
-'''
