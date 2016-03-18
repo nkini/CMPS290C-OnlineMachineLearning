@@ -43,26 +43,26 @@ exp_experts = np.logspace(0.01, 1, num=10, endpoint=True)
 '''
 def get_losses_master(idletimes,experts,setting):
     losses = []
-    weights = pickle.load(open('weights_'+setting+'_100k.pkl'))
-    for i in range(len(weights)):
-        master_pred = np.dot(w[i],experts)
+    weights = pickle.load(open('plottables/weights_'+setting+'_100k.pkl'))
+    for i in range(len(idletimes)):
+        master_pred = np.dot(weights[i],experts)
         if idletimes[i] < master_pred:
             losses.append(idletimes[i])
         else:
             losses.append(master_pred + sdc)
     
     cum_losses = np.cumsum(losses)
-    pickle.dump(cum_losses,open('cum_losses_master_'+setting+'_100k.pkl','w'))
+    pickle.dump(cum_losses,open('plottables/cum_losses_master_'+setting+'_100k.pkl','w'))
     
 
-def get_losses_optimali(idletimes):
+def get_losses_optimal(idletimes):
     global sdc
     losses_optimal = []
     for idletime in idletimes:
         losses_optimal.append(min(idletime,sdc))
 
-    cum_losses = np.cumsum(losses)
-    pickle.dump(cum_losses,open('cum_losses_optimal_100k.pkl','w'))
+    cum_losses = np.cumsum(losses_optimal)
+    pickle.dump(cum_losses,open('plottables/cum_losses_optimal_100k.pkl','w'))
 
     
 
@@ -177,20 +177,24 @@ print('cum_losses_FSDP_linexp_100k')
 get_losses_fixed_share_to_decaying_past(cello2_data[:num_data],lin_experts,'cum_losses_FSDP_linexp_100k.pkl')
 print('cum_losses_FSDP_expexp_100k')
 get_losses_fixed_share_to_decaying_past(cello2_data[:num_data],exp_experts,'cum_losses_FSDP_expexp_100k.pkl')
+
+print('cum_master_losses_SE_linexp_100k')
+get_losses_master(cello2_data[:num_data],lin_experts,'SE_linexp')
+print('cum_master_losses_SE_expexp_100k')
+get_losses_master(cello2_data[:num_data],exp_experts,'SE_expexp')
+print('cum_master_losses_FSSV_linexp_100k')
+get_losses_master(cello2_data[:num_data],lin_experts,'FSSV_linexp')
+print('cum_master_losses_FSSV_expexp_100k')
+get_losses_master(cello2_data[:num_data],exp_experts,'FSSV_expexp')
+print('cum_master_losses_FSUP_linexp_100k')
+get_losses_master(cello2_data[:num_data],lin_experts,'FSUP_linexp')
+print('cum_master_losses_FSUP_expexp_100k')
+get_losses_master(cello2_data[:num_data],exp_experts,'FSUP_expexp')
+print('cum_master_losses_FSDP_linexp_100k')
+get_losses_master(cello2_data[:num_data],lin_experts,'FSDP_linexp')
+print('cum_master_losses_FSDP_expexp_100k')
+get_losses_master(cello2_data[:num_data],exp_experts,'FSDP_expexp')
 '''
+
 print('cum_optimal_losses_SE_linexp_100k')
-get_losses_optimal(cello2_data[:num_data],lin_experts,'SE_linexp')
-print('cum_optimal_losses_SE_expexp_100k')
-get_losses_optimal(cello2_data[:num_data],lin_experts,'SE_expexp')
-print('cum_optimal_losses_FSSV_linexp_100k')
-get_losses_optimal(cello2_data[:num_data],lin_experts,'FSSV_linexp')
-print('cum_optimal_losses_FSSV_expexp_100k')
-get_losses_optimal(cello2_data[:num_data],lin_experts,'FSSV_expexp')
-print('cum_optimal_losses_FSUP_linexp_100k')
-get_losses_optimal(cello2_data[:num_data],lin_experts,'FSUP_linexp')
-print('cum_optimal_losses_FSUP_expexp_100k')
-get_losses_optimal(cello2_data[:num_data],lin_experts,'FSUP_expexp')
-print('cum_optimal_losses_FSDP_linexp_100k')
-get_losses_optimal(cello2_data[:num_data],lin_experts,'FSDP_linexp')
-print('cum_optimal_losses_FSDP_expexp_100k')
-get_losses_optimal(cello2_data[:num_data],lin_experts,'FSDP_expexp')
+get_losses_optimal(cello2_data[:num_data])
